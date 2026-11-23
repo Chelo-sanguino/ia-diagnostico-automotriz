@@ -1,0 +1,16 @@
+services:
+  ia-diagnostico:
+    build: .
+    image: ia-diagnostico-automotriz:latest
+    container_name: ia_diagnostico_app
+    ports:
+      - "8000:8000"
+    volumes:
+      - ia-storage:/data
+    environment:
+      - DATA_DIR=/data
+    restart: unless-stopped
+
+volumes:
+  ia-storage:
+    driver: local
