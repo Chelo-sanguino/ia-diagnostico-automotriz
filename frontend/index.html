@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Diagnóstico Automotriz IA</title>
+<link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+<header class="top">
+  <div class="brand">
+    <span class="dot" aria-hidden="true"></span>
+    <div>
+      <h1>Diagnóstico Automotriz IA</h1>
+      <p>Clasifica el sistema del vehículo afectado a partir de síntomas y pruebas</p>
+    </div>
+  </div>
+  <div class="top-right">
+    <span id="model-pill" class="pill">cargando modelo…</span>
+    <a class="link" href="/docs" target="_blank" rel="noopener">Swagger ↗</a>
+  </div>
+</header>
+
+<nav class="tabs" role="tablist">
+  <button class="tab active" data-tab="predict" role="tab">Diagnóstico</button>
+  <button class="tab" data-tab="history" role="tab">Historial</button>
+  <button class="tab" data-tab="metrics" role="tab">Métricas</button>
+  <button class="tab" data-tab="train" role="tab">Entrenamiento</button>
+  <button class="tab" data-tab="models" role="tab">Versiones</button>
+</nav>
+
+<main>
+  <!-- DIAGNÓSTICO -->
+  <section id="tab-predict" class="panel active">
+    <div class="grid-2">
+      <form id="predict-form" class="card">
+        <div class="card-head">
+          <h2>Datos del diagnóstico</h2>
+          <button type="button" id="btn-example" class="btn ghost">Cargar ejemplo real</button>
+        </div>
+        <label>Síntomas <span class="req">*</span>
+          <textarea name="symptoms" rows="2" required minlength="3" placeholder="Ej.: ABS warning light on"></textarea>
+        </label>
+        <div class="row">
+          <label>Paso 1 realizado<input name="step_1" placeholder="Check ABS fuse"></label>
+          <label>Resultado 1<input name="result_1" placeholder="Blown"></label>
+        </div>
+        <div class="row">
+          <label>Paso 2 realizado<input name="step_2" placeholder="Inspect wiring to ABS module"></label>
+          <label>Resultado 2<input name="result_2" placeholder="Good wiring"></label>
+        </div>
+        <p class="hint">Los datos se envían a <code>POST /api/v1/predict</code>. El modelo fue entrenado con texto en inglés.</p>
+        <button class="btn primary" type="submit">Diagnosticar</button>
+      </form>
+
+      <div class="card" id="result-card">
+        <h2>Resultado</h2>
+        <div id="result" class="empty">Envía un diagnóstico para ver la clasificación.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HISTORIAL -->
+  <section id="tab-history" class="panel">
+    <div class="card">
+      <div class="card-head">
+        <h2>Historial de predicciones</h2>
+        <div class="inline">
+          <select id="hist-filter"><option value="">Todas las categorías</option></select>
+          <button class="btn ghost" id="hist-refresh">Actualizar</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table id="hist-table">
+          <thead><tr><th>#</th><th>Fecha</th><th>Síntomas</th><th>Pruebas</th><th>Predicción</th><th>Conf.</th><th>Modelo</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="pager">
+        <button class="btn ghost" id="hist-prev">← Anterior</button>
+        <span id="hist-info"></span>
+        <button class="btn ghost" id="hist-next">Siguiente →</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- MÉTRICAS -->
+  <section id="tab-metrics" class="panel">
+    <div id="metrics-content"><div class="card empty">Cargando métricas…</div></div>
+  </section>
+
+  <!-- ENTRENAMIENTO -->
+  <section id="tab-train" class="panel">
+    <div class="grid-2">
+      <div class="card">
+        <h2>1 · Enviar archivo de entrenamiento</h2>
+        <p class="hint">Acepta <b>.csv</b> con columnas <code>category, symptoms, step_1, result_1, step_2, result_2</code>
+          (opcional <code>subcategory</code>, <code>component_id</code>) o el <b>.json</b> con el formato original del dataset.</p>
+        <form id="upload-form">
+          <input type="file" id="file-input" accept=".csv,.json" required>
+          <button class="btn primary" type="submit">Subir y validar</button>
+        </form>
+        <div id="upload-msg" class="msg"></div>
+        <h3>Archivos subidos</h3>
+        <div class="table-wrap">
+          <table id="files-table"><thead><tr><th>#</th><th>Archivo</th><th>Tipo</th><th>Filas</th><th>Categorías</th><th>Subido</th></tr></thead><tbody></tbody></table>
+        </div>
+      </div>
+      <div class="card">
+        <h2>2 · Reentrenar el modelo</h2>
+        <p class="hint">Entrena una nueva versión con el dataset base + los archivos subidos. Tarda unos segundos.</p>
+        <label class="check"><input type="checkbox" id="opt-uploaded" checked> Incluir archivos subidos</label>
+        <label class="check"><input type="checkbox" id="opt-activate" checked> Activar la nueva versión al terminar</label>
+        <button class="btn primary" id="btn-retrain">Reentrenar modelo</button>
+        <div id="retrain-msg" class="msg"></div>
+        <div id="retrain-result"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- VERSIONES -->
+  <section id="tab-models" class="panel">
+    <div class="card">
+      <h2>Versiones del modelo</h2>
+      <p class="hint">Cada entrenamiento queda registrado. Puedes volver a una versión anterior (rollback).</p>
+      <div class="table-wrap">
+        <table id="models-table"><thead><tr><th>Versión</th><th>Origen</th><th>Muestras</th><th>Accuracy</th><th>F1 macro</th><th>Bal. Acc.</th><th>Creado</th><th></th></tr></thead><tbody></tbody></table>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div id="toast" class="toast" role="status"></div>
+<script src="/static/app.js"></script>
+</body>
+</html>
