@@ -1,0 +1,26 @@
+services:
+  ia-diagnostico:
+    build: .
+    image: ia-diagnostico-automotriz:latest
+    container_name: ia_diagnostico_app
+    ports:
+      - "8000:8000"
+    volumes:
+      - ia-storage:/data
+    environment:
+      - DATA_DIR=/data
+    restart: unless-stopped
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; r = urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3); raise SystemExit(0 if r.status == 200 else 1)"
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 90s
+
+volumes:
+  ia-storage:
+    driver: local
